@@ -1,147 +1,73 @@
-import { Hono } from "hono";
+import { Context, Hono } from "hono";
 import { contextStorage, getContext } from "hono/context-storage";
-import { html } from "hono/html";
+import { cors } from "hono/cors";
+import { prettyJSON } from "hono/pretty-json";
+import { KrlStation, Schedule, ScheduleTrain } from "./types";
+
 type Env = {
   Variables: {
-    counter: number;
+    authorizationToken: string;
   };
 };
 
 const app = new Hono<Env>();
-const MIN_VALUE = -10;
-const MAX_VALUE = 500;
+const baseURL = "https://api-partner.krl.co.id/krlweb/v1";
+const authorizationToken =
+  "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIzIiwianRpIjoiMDYzNWIyOGMzYzg3YTY3ZTRjYWE4YTI0MjYxZGYwYzIxNjYzODA4NWM2NWU4ZjhiYzQ4OGNlM2JiZThmYWNmODU4YzY0YmI0MjgyM2EwOTUiLCJpYXQiOjE3MjI2MTc1MTQsIm5iZiI6MTcyMjYxNzUxNCwiZXhwIjoxNzU0MTUzNTE0LCJzdWIiOiI1Iiwic2NvcGVzIjpbXX0.Jz_sedcMtaZJ4dj0eWVc4_pr_wUQ3s1-UgpopFGhEmJt_iGzj6BdnOEEhcDDdIz-gydQL5ek0S_36v5h6P_X3OQyII3JmHp1SEDJMwrcy4FCY63-jGnhPBb4sprqUFruDRFSEIs1cNQ-3rv3qRDzJtGYc_bAkl2MfgZj85bvt2DDwBWPraZuCCkwz2fJvox-6qz6P7iK9YdQq8AjJfuNdl7t_1hMHixmtDG0KooVnfBV7PoChxvcWvs8FOmtYRdqD7RSEIoOXym2kcwqK-rmbWf9VuPQCN5gjLPimL4t2TbifBg5RWNIAAuHLcYzea48i3okbhkqGGlYTk3iVMU6Hf_Jruns1WJr3A961bd4rny62lNXyGPgNLRJJKedCs5lmtUTr4gZRec4Pz_MqDzlEYC3QzRAOZv0Ergp8-W1Vrv5gYyYNr-YQNdZ01mc7JH72N2dpU9G00K5kYxlcXDNVh8520-R-MrxYbmiFGVlNF2BzEH8qq6Ko9m0jT0NiKEOjetwegrbNdNq_oN4KmHvw2sHkGWY06rUeciYJMhBF1JZuRjj3JTwBUBVXcYZMFtwUAoikVByzKuaZZeTo1AtCiSjejSHNdpLxyKk_SFUzog5MOkUN1ktAhFnBFoz6SlWAJBJIS-lHYsdFLSug2YNiaNllkOUsDbYkiDtmPc9XWc";
+
+app.use("/krlweb/*", cors());
+app.use(prettyJSON());
 app.use(contextStorage());
 
 app.use(async (c, next) => {
-  let counter = c.get("counter") as number | undefined;
-  if (!counter) {
-    counter = 0;
-  }
-  counter = Math.max(MIN_VALUE, Math.min(MAX_VALUE, counter));
-  c.set("counter", counter);
+  c.set("authorizationToken", authorizationToken);
   await next();
 });
 
-app.get("/", (c) => {
-  return c.html(
-    html`<!DOCTYPE html>
-      <html lang="en">
-        <head>
-          <meta charset="UTF-8" />
-          <meta
-            name="viewport"
-            content="width=device-width, initial-scale=1.0"
-          />
-          <link
-            href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
-            rel="stylesheet"
-          />
-          <title>Context Hono</title>
-        </head>
-        <body
-          class="bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-200"
-        >
-          <div class="container mx-auto px-4 py-8">
-            <h1 class="text-4xl font-bold mb-8 text-center">Counter App</h1>
+const fetchData = async <T>(path: string, c: Context): Promise<T> => {
+  const headers = {
+    accept: "application/json, text/javascript, */*; q=0.01",
+    "accept-encoding": "gzip, deflate, br, zstd",
+    "accept-language": "id,en-US;q=0.9,en;q=0.8,ja;q=0.7,ar;q=0.6",
+    authorization: getContext<Env>().var.authorizationToken,
+    origin: "https://commuterline.id",
+    referer: "https://commuterline.id/",
+    "user-agent": c.req.header("User-Agent") ?? "",
+  };
 
-            <div class="max-w-md mx-auto">
-              <div
-                class="rounded-lg border border-white/60 dark:border-border/30"
-              >
-                <div
-                  class="border dark:border-neutral-900/80 border-black/10 rounded-[calc(var(--radius)-1px)]"
-                >
-                  <div
-                    class="border dark:border-neutral-950 border-white/50 rounded-[calc(var(--radius)-2px)]"
-                  >
-                    <div
-                      class="border dark:border-neutral-900/70 border-neutral-950/20 rounded-[calc(var(--radius)-3px)]"
-                    >
-                      <div
-                        class="w-full border border-white/50 dark:border-neutral-700/50 text-neutral-500 bg-gradient-to-b from-card/70 to-secondary/50 rounded-[calc(var(--radius)-4px)] p-6"
-                      >
-                        <h2 class="text-2xl font-bold mb-4 text-center">
-                          Counter Value
-                        </h2>
-                        <p
-                          id="counter"
-                          class="text-6xl font-bold text-center mb-8"
-                        >
-                          0
-                        </p>
-                        <div class="flex justify-center space-x-4">
-                          <button
-                            id="decrement"
-                            class="relative w-full flex items-center justify-center text-sm transition duration-300 ease-in-out border px-4 py-2 rounded-[12px] border-black/20 bg-white/50 dark:border-neutral-950 dark:bg-neutral-600/50 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700 active:bg-neutral-200 dark:active:bg-neutral-800"
-                          >
-                            Decrement
-                          </button>
-                          <button
-                            id="increment"
-                            class="relative w-full flex items-center justify-center text-sm transition duration-300 ease-in-out border border-black/10 dark:border-neutral-950 bg-gradient-to-b from-indigo-300/90 to-indigo-500 dark:from-indigo-200/70 dark:to-indigo-500 text-white/90 hover:from-indigo-400/70 hover:to-indigo-600/70 active:from-indigo-400/80 active:to-indigo-600/80"
-                          >
-                            Increment
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+  const response = await fetch(path, {
+    method: "GET",
+    headers: headers,
+  });
 
-          <script>
-            const counter = document.getElementById("counter");
-            const incrementBtn = document.getElementById("increment");
-            const decrementBtn = document.getElementById("decrement");
+  return await response.json();
+};
 
-            let count = 0;
+app.get("/krlweb/v1/krl-station", async (c) => {
+  const data = await fetchData<KrlStation>(`${baseURL}/krl-station`, c);
+  return c.json(data);
+});
 
-            async function updateCounter() {
-              counter.innerText = count;
-            }
+app.get("/krlweb/v1/schedule", async (c) => {
+  const stationId = c.req.query("stationid");
+  const timeFrom = c.req.query("timefrom");
+  const timeTo = c.req.query("timeto");
 
-            incrementBtn.addEventListener("click", async () => {
-              const response = await fetch("/counter/increment", {
-                method: "POST",
-              });
-              const data = await response.json();
-              count = data.counter;
-              console.log(count);
-              updateCounter();
-            });
-
-            decrementBtn.addEventListener("click", async () => {
-              const response = await fetch("/counter/decrement", {
-                method: "POST",
-              });
-              const data = await response.json();
-              count = data.counter;
-              console.log(count);
-              updateCounter();
-            });
-
-            updateCounter();
-          </script>
-        </body>
-      </html> `
+  const data = await fetchData<Schedule>(
+    `${baseURL}/schedule?stationid=${stationId}&timefrom=${timeFrom}&timeto=${timeTo}`,
+    c
   );
-});
-app.post("/counter/increment", async (c) => {
-  let counter = getContext<Env>().var.counter;
-  let newCounter = Math.min(MAX_VALUE, counter + 1);
-  console.log(newCounter);
-  c.set("counter", newCounter);
-  return c.json({ counter: newCounter });
+  return c.json(data);
 });
 
-app.post("/counter/decrement", async (c) => {
-  let counter = getContext<Env>().var.counter as number;
-  let newCounter = Math.max(MIN_VALUE, counter - 1);
-  console.log({ counter: newCounter });
-  c.set("counter", newCounter);
-  return c.json({ counter: newCounter });
+app.get("/krlweb/v1/schedule-train", async (c) => {
+  const trainId = c.req.query("trainid");
+
+  const data = await fetchData<ScheduleTrain>(
+    `${baseURL}/schedule-train?trainid=${trainId}`,
+    c
+  );
+  return c.json(data);
 });
 
 export default app;
