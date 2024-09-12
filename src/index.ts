@@ -50,8 +50,9 @@ app.get("/doc", (c) => {
               required: true,
               schema: {
                 type: "string",
+                default: "AK",
               },
-              example: "AK",
+              description: "Station ID (e.g., AK for Angke station)",
             },
             {
               name: "timefrom",
@@ -59,8 +60,9 @@ app.get("/doc", (c) => {
               required: true,
               schema: {
                 type: "string",
+                default: "14:00",
               },
-              example: "14:00",
+              description: "Start time in HH:MM format",
             },
             {
               name: "timeto",
@@ -68,8 +70,9 @@ app.get("/doc", (c) => {
               required: true,
               schema: {
                 type: "string",
+                default: "16:00",
               },
-              example: "16:00",
+              description: "End time in HH:MM format",
             },
           ],
           responses: {
@@ -96,8 +99,9 @@ app.get("/doc", (c) => {
               required: true,
               schema: {
                 type: "string",
+                default: "5736",
               },
-              example: "5736",
+              description: "Train ID (e.g., 5736)",
             },
           ],
           responses: {
